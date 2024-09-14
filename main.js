@@ -1,4 +1,7 @@
 import "./note-item.js"; // Import the web component
+import "./app-bar.js";
+import "./note-form.js";
+
 import { notesData as sampleNotes } from "./sample-notes.js";
 
 const notesListElement = document.querySelector("#notesList");
