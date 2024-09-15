@@ -39,6 +39,11 @@ async function loadNotesFromAPI() {
     }
   } catch (error) {
     console.error("Error fetching notes:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "Failed to load notes. Please try again later.",
+    });
   } finally {
     hideLoading(); // Sembunyikan loading indicator setelah operasi selesai
   }
