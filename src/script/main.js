@@ -1,12 +1,11 @@
 import "../style.css";
-import "./note-item.js"; // Import the web component
+import "./note-item.js";
 import "./app-bar.js";
 import "./note-form.js";
 
-import { notesData as sampleNotes } from "./sample-notes.js";
-
 const noteFormElement = document.querySelector("note-form");
 const notesListElement = document.querySelector("#notesList");
+const loadingIndicator = document.querySelector("#loadingIndicator");
 
 // Ambil elemen input dari dalam shadow DOM
 const noteForm = noteFormElement.shadowRoot.querySelector("#noteForm");
@@ -15,21 +14,93 @@ const noteBodyInput = noteFormElement.shadowRoot.querySelector("#noteBody");
 
 let notes = [];
 
-// Fungsi untuk menyimpan catatan ke LocalStorage
-function saveNotesToLocalStorage() {
-  localStorage.setItem("notes", JSON.stringify(notes));
+// Fungsi untuk menampilkan loading indicator
+function showLoading() {
+  loadingIndicator.style.display = "block";
 }
 
-// Fungsi untuk memuat catatan dari LocalStorage
-function loadNotesFromLocalStorage() {
-  const savedNotes = localStorage.getItem("notes");
-  if (savedNotes) {
-    notes = JSON.parse(savedNotes);
-  } else {
-    notes = [...sampleNotes];
+// Fungsi untuk menyembunyikan loading indicator
+function hideLoading() {
+  loadingIndicator.style.display = "none";
+}
+
+// Fungsi untuk memuat catatan dari API
+async function loadNotesFromAPI() {
+  showLoading();
+  try {
+    const response = await fetch("https://notes-api.dicoding.dev/v2/notes");
+    const result = await response.json();
+
+    if (result.status === "success") {
+      notes = result.data; // Ambil data catatan dari respons API
+      renderNotes();
+    } else {
+      console.error("Error fetching notes:", result.message);
+    }
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+  } finally {
+    hideLoading(); // Sembunyikan loading indicator setelah operasi selesai
   }
 }
 
+// Fungsi untuk menambahkan catatan baru ke API
+async function addNoteToAPI(note) {
+  showLoading();
+  try {
+    const response = await fetch("https://notes-api.dicoding.dev/v2/notes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: note.title,
+        body: note.body,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      notes.push(result.data); // Tambah data catatan baru ke daftar notes
+      renderNotes();
+    } else {
+      console.error("Error adding note:", result.message);
+    }
+  } catch (error) {
+    console.error("Error adding note:", error);
+  } finally {
+    hideLoading(); // Sembunyikan loading indicator setelah operasi selesai
+  }
+}
+
+// Fungsi untuk menghapus catatan dari API
+async function deleteNoteFromAPI(id) {
+  showLoading();
+  try {
+    const response = await fetch(
+      `https://notes-api.dicoding.dev/v2/notes/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      notes = notes.filter((note) => note.id !== id); // Filter catatan yang dihapus
+      renderNotes();
+    } else {
+      console.error("Error deleting note:", result.message);
+    }
+  } catch (error) {
+    console.error("Error deleting note:", error);
+  } finally {
+    hideLoading(); // Sembunyikan loading indicator setelah operasi selesai
+  }
+}
+
+// Fungsi untuk menampilkan catatan
 function renderNotes() {
   notesListElement.innerHTML = "";
   notes.forEach((note) => {
@@ -40,22 +111,8 @@ function renderNotes() {
 
     // Event untuk menghapus catatan
     noteElement.addEventListener("delete-note", (e) => {
-      notes = notes.filter((n) => n.id !== e.detail.id);
-      renderNotes();
-      saveNotesToLocalStorage(); // Simpan setelah menghapus
-    });
-
-    // Event untuk mengedit catatan
-    noteElement.addEventListener("edit-note", (e) => {
       const id = e.detail.id;
-      const editedNote = notes.find((n) => n.id === id);
-      if (editedNote) {
-        // Memperbarui catatan yang sudah ada
-        editedNote.title = e.detail.title;
-        editedNote.body = e.detail.body;
-        renderNotes();
-        saveNotesToLocalStorage(); // Simpan setelah pengeditan
-      }
+      deleteNoteFromAPI(id);
     });
 
     notesListElement.append(noteElement);
@@ -65,16 +122,12 @@ function renderNotes() {
 noteForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const newNote = {
-    id: Date.now().toString(), // Simple unique ID
     title: noteTitleInput.value,
     body: noteBodyInput.value,
   };
-  notes.push(newNote);
-  renderNotes();
-  saveNotesToLocalStorage(); // Simpan setelah menambahkan catatan baru
-  noteForm.reset();
+  addNoteToAPI(newNote); // Menggunakan API untuk menambahkan catatan
+  noteForm.reset(); // Reset form setelah submit
 });
 
-// Muat catatan dari LocalStorage saat halaman pertama kali dibuka
-loadNotesFromLocalStorage();
-renderNotes();
+// Muat catatan dari API saat halaman pertama kali dibuka
+loadNotesFromAPI();
