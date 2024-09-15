@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notes App</title>
+    <!-- <link rel="stylesheet" href="./style.css" /> -->
+    <!-- <script type="module" src="./main.js" defer></script> -->
+  </head>
+  <body>
+    <div class="container">
+      <app-bar></app-bar>
+      <note-form></note-form>
+      <div id="loadingIndicator" style="display: none">Loading...</div>
+      <!-- <form id="noteForm">
+        <input type="text" id="noteTitle" placeholder="Title" required />
+        <textarea id="noteBody" placeholder="Body" required></textarea>
+        <button type="submit">Add Note</button>
+      </form> -->
+      <div id="notesList" class="list"></div>
+    </div>
+    <script src="../dist/bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </body>
+</html>
